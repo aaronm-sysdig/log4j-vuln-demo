@@ -7,31 +7,65 @@ import org.apache.logging.log4j.core.LoggerContext;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Demo app using Log4j 2.14.1 — intentionally vulnerable to CVE-2021-44228 (Log4Shell).
- * For Sysdig CNAPP scanning and remediation testing only.
+ * Demo app for Sysdig CNAPP scanning and remediation testing.
+ * Detects at runtime whether the bundled log4j version is vulnerable to CVE-2021-44228.
  */
 public class App {
     private static final Logger logger = LogManager.getLogger(App.class);
-    private static final String LOG4J_VERSION = "2.14.1";
     private static final long HEARTBEAT_INTERVAL_MS = 5_000;
 
+    // CVE-2021-44228 (Log4Shell) and subsequent log4j CVEs are all fixed in 2.17.1+
+    private static final int[] SAFE_VERSION = {2, 17, 1};
+
     public static void main(String[] args) throws InterruptedException {
-        String log4jImplVersion = LoggerContext.class.getPackage().getImplementationVersion();
+        String version = LoggerContext.class.getPackage().getImplementationVersion();
+        if (version == null) version = "unknown";
+
+        boolean vulnerable = isVulnerable(version);
 
         logger.info("=== Sysdig Log4Shell Demo Service starting ===");
-        logger.info("Log4j version (pom.xml): {}", LOG4J_VERSION);
-        logger.info("Log4j version (runtime):  {}", log4jImplVersion != null ? log4jImplVersion : LOG4J_VERSION);
-        logger.warn("CVE-2021-44228 (Log4Shell) — CVSS 10.0 — THIS IMAGE IS INTENTIONALLY VULNERABLE");
+        logger.info("Log4j version (runtime): {}", version);
+
+        if (vulnerable) {
+            logger.warn("SECURITY STATUS: VULNERABLE — log4j {} is affected by CVE-2021-44228 (Log4Shell, CVSS 10.0)", version);
+            logger.warn("Fix: upgrade log4j-core to 2.17.1+ in pom.xml");
+        } else {
+            logger.info("SECURITY STATUS: SAFE — log4j {} is NOT affected by CVE-2021-44228", version);
+        }
+
         logger.info("Heartbeat interval: {}ms", HEARTBEAT_INTERVAL_MS);
 
         AtomicLong tick = new AtomicLong(0);
         while (true) {
             Thread.sleep(HEARTBEAT_INTERVAL_MS);
             long t = tick.incrementAndGet();
-            logger.info("[tick={}] Service alive — log4j-core:{} — uptime {}s", t, LOG4J_VERSION, t * HEARTBEAT_INTERVAL_MS / 1000);
-            if (t % 12 == 0) {
-                logger.warn("[tick={}] Reminder: running log4j {} — upgrade to 2.17.1+ to fix CVE-2021-44228", t, LOG4J_VERSION);
+
+            if (vulnerable) {
+                logger.info("[tick={}] log4j-core:{} [VULNERABLE] uptime {}s", t, version, t * HEARTBEAT_INTERVAL_MS / 1000);
+                if (t % 12 == 0) {
+                    logger.warn("[tick={}] CVE-2021-44228 unpatched — still running log4j {} — upgrade to 2.17.1+", t, version);
+                }
+            } else {
+                logger.info("[tick={}] log4j-core:{} [SAFE] uptime {}s", t, version, t * HEARTBEAT_INTERVAL_MS / 1000);
             }
+        }
+    }
+
+    /** Returns true if the given version string is older than SAFE_VERSION. */
+    static boolean isVulnerable(String version) {
+        try {
+            String[] parts = version.split("[.\\-]");
+            int[] v = new int[3];
+            for (int i = 0; i < 3 && i < parts.length; i++) {
+                v[i] = Integer.parseInt(parts[i]);
+            }
+            for (int i = 0; i < 3; i++) {
+                if (v[i] < SAFE_VERSION[i]) return true;
+                if (v[i] > SAFE_VERSION[i]) return false;
+            }
+            return false; // exactly 2.17.1 — safe
+        } catch (NumberFormatException e) {
+            return true; // can't parse → assume vulnerable
         }
     }
 }
