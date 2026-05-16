@@ -14,8 +14,9 @@ public class App {
     private static final Logger logger = LogManager.getLogger(App.class);
     private static final long HEARTBEAT_INTERVAL_MS = 5_000;
 
-    // CVE-2021-44228 (Log4Shell) and subsequent log4j CVEs are all fixed in 2.17.1+
-    private static final int[] SAFE_VERSION = {2, 17, 1};
+    // Full chain: CVE-2021-44228→2.15.0, CVE-2021-45046→2.16.0, CVE-2021-45105→2.17.0,
+    // CVE-2021-44832→2.17.1, CVE-2025-68161→2.25.3, CVE-2026-34477/CVE-2026-34480→2.25.4
+    private static final int[] SAFE_VERSION = {2, 25, 4};
 
     public static void main(String[] args) throws InterruptedException {
         String version = LoggerContext.class.getPackage().getImplementationVersion();
@@ -28,7 +29,7 @@ public class App {
 
         if (vulnerable) {
             logger.warn("SECURITY STATUS: VULNERABLE — log4j {} is affected by CVE-2021-44228 (Log4Shell, CVSS 10.0)", version);
-            logger.warn("Fix: upgrade log4j-core to 2.17.1+ in pom.xml");
+            logger.warn("Fix: upgrade log4j-core to 2.25.4+ in pom.xml (chain: 2.14.1→2.15.0→2.16.0→2.17.1→2.25.4)");
         } else {
             logger.info("SECURITY STATUS: SAFE — log4j {} is NOT affected by CVE-2021-44228", version);
         }
@@ -43,7 +44,7 @@ public class App {
             if (vulnerable) {
                 logger.info("[tick={}] log4j-core:{} [VULNERABLE] uptime {}s", t, version, t * HEARTBEAT_INTERVAL_MS / 1000);
                 if (t % 12 == 0) {
-                    logger.warn("[tick={}] CVE-2021-44228 unpatched — still running log4j {} — upgrade to 2.17.1+", t, version);
+                    logger.warn("[tick={}] Unpatched CVEs — still running log4j {} — upgrade to 2.25.4+", t, version);
                 }
             } else {
                 logger.info("[tick={}] log4j-core:{} [SAFE] uptime {}s", t, version, t * HEARTBEAT_INTERVAL_MS / 1000);
