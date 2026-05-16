@@ -15,16 +15,15 @@
     </properties>
 
     <dependencies>
-        <!-- CVE-2021-44228 (Log4Shell) — intentionally vulnerable for Sysdig scanning demo -->
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
-            <version>2.14.1</version>
+            <version>2.25.4</version>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>
-            <version>2.14.1</version>
+            <version>2.25.4</version>
         </dependency>
     </dependencies>
 
