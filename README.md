@@ -15,7 +15,7 @@ This repo exists to demonstrate Sysdig's end-to-end CNAPP workflow:
 Bump `log4j-core` and `log4j-api` to **2.17.1** or later in `pom.xml`.
 
 ## Image
-
+Use a proper version # so you can then bump it to `1.0.1` or something
 ```
-ghcr.io/aaronm-sysdig/log4j-vuln-demo:latest
+ghcr.io/aaronm-sysdig/log4j-vuln-demo:1.0.0
 ```
